@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView
+from django.views.generic import View, TemplateView
 from django.forms.models import ModelForm
 from django.shortcuts import HttpResponse, Http404
 from django.http.response import HttpResponseRedirect
@@ -28,7 +28,6 @@ class EditForm(ModelForm):
     return self.cleaned_data
 
 class EditView(TemplateView):
-  
   def get(self, request, *args, **kwargs):
     action = 'view'
     if 'action' in request.GET:
@@ -126,12 +125,35 @@ class EntriesListView(ListView):
   model = Entry
   queryset = Entry.objects.all()
   template_name = 'entries-list.html'
-  
-  def get_context_data(self, *, object_list=None, **kwargs):
-    context = super().get_context_data(**kwargs)
-    base = '://'.join((self.request.scheme, self.request.get_host()))
-    context['page'] = {
-      'title': 'Entries list',
-      'base': base
+  extra_context = {
+    'page': {
+      'title': 'Existing entries list'
     }
-    return context
+  }
+
+
+class CreateEntryView(TemplateView):
+  def get(self, request, *args, **kwargs):
+    form = EditForm()
+    self.template_name = "edit-page.html"
+    self.extra_context = {
+      'page': {
+        'title': 'Create entry',
+        'form': form
+      },
+      'form': {
+        'action': 'create',
+      }
+    }
+    return super().get(request, *args, **kwargs)
+
+class EntryDispatcher(View):
+  def get(self, request, *args, **kwargs):
+    action = 'view'
+    if 'action' in request.GET:
+      action = request.GET['action']
+    if action == 'create':
+      class_name = CreateEntryView
+    else:
+      class_name = EntriesListView
+    return class_name.as_view()(request, *args, **kwargs)

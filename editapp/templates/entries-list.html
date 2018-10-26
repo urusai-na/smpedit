@@ -1,6 +1,10 @@
 {% extends 'base-page.html' %}
 
 {% block content %}
+<form action="" method="get">
+    <input type="submit" value="create">
+    <input type="hidden" name="action" value="create"/>
+</form>
 {% for entry in object_list %}
     <ul>
         <li><a href="{{page.base}}/{{entry.title}}">{{entry.title|title}}</a></li>

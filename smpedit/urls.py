@@ -15,10 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from editapp.views import EditView, EntriesListView
+from editapp.views import EditView, EntryDispatcher
 
 urlpatterns = [
-    path('', EntriesListView.as_view()),
+    path('', EntryDispatcher.as_view()),
     path('<str:title>/', EditView.as_view()),
     path('admin/', admin.site.urls),
 ]
