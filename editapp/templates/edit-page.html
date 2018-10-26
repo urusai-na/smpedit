@@ -1,9 +1,10 @@
 {% extends 'base-page.html' %}
 
 {% block content %}
-<form>
+<form action="/{{page.title}}/" method="post">
     {% csrf_token %}
-    {{form.as_p}}
+    {{page.form.as_p}}
     <input type="submit" value="Save"/>
+    <input type="hidden" name="action" value="{{form.action}}"/>
 </form>
 {% endblock %}

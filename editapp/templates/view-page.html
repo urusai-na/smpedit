@@ -1,5 +1,9 @@
 {% extends 'base-page.html' %}
 
 {% block content %}
-{{entry.text}}
+<form action="" method="get">
+    <input type="submit" value="edit">
+    <input type="hidden" name="action" value="edit"/>
+</form>
+{{page.text}}
 {% endblock %}
