@@ -5,6 +5,7 @@ from django.http.response import HttpResponseRedirect
 from editapp.models import Entry
 from django.template import Template, RequestContext
 from django.template.response import TemplateResponse
+from django.views.generic import ListView
 
 
 class ConflictTemplateResponse(TemplateResponse):
@@ -120,3 +121,17 @@ class EditView(TemplateView):
     }
     
     return super().get(request, *args, **kwargs)
+
+class EntriesListView(ListView):
+  model = Entry
+  queryset = Entry.objects.all()
+  template_name = 'entries-list.html'
+  
+  def get_context_data(self, *, object_list=None, **kwargs):
+    context = super().get_context_data(**kwargs)
+    base = '://'.join((self.request.scheme, self.request.get_host()))
+    context['page'] = {
+      'title': 'Entries list',
+      'base': base
+    }
+    return context
