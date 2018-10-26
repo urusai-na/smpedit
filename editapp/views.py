@@ -1,19 +1,30 @@
-from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.forms.models import ModelForm
 from django.shortcuts import HttpResponse, Http404
-from django.http.response import HttpResponseBadRequest, HttpResponseRedirect
+from django.http.response import HttpResponseRedirect
 from editapp.models import Entry
 from django.template import Template, RequestContext
+from django.template.response import TemplateResponse
 
-class HttpConflict(HttpResponse):
-  status_code = 409
+
+class ConflictTemplateResponse(TemplateResponse):
+  def __init__(self, *args, **kwargs):
+    kwargs['status'] = 409
+    super().__init__(*args, **kwargs)
+
+class BadRequestTemplateResponse(TemplateResponse):
+  def __init__(self, *args, **kwargs):
+    kwargs['status'] = 409
+    super().__init__(*args, **kwargs)
+
 
 class EditForm(ModelForm):
   class Meta:
     model = Entry
     fields = ['title', 'text']
 
+  def clean(self):
+    return self.cleaned_data
 
 class EditView(TemplateView):
   
@@ -24,7 +35,7 @@ class EditView(TemplateView):
     
     if action == 'create':
       if Entry.objects.filter(title__exact=kwargs['title']).exists():
-        return HttpConflict()
+        return HttpResponse(status=409)
       form = EditForm(initial={'title': kwargs['title']})
       self.template_name = "edit-page.html"
       self.extra_context = {
@@ -83,7 +94,7 @@ class EditView(TemplateView):
         entry = None
       if action == 'create':
         if entry is not None:
-          self.response_class = HttpConflict
+          self.response_class = ConflictTemplateResponse
         entry = Entry()
       elif entry is None:
         raise Http404
@@ -91,12 +102,12 @@ class EditView(TemplateView):
       entry.title = form.cleaned_data['title']
       entry.text = form.cleaned_data['text']
       entry.save()
-      base = '://'.join((request.get_host(), request.scheme))
+      base = '://'.join((request.scheme, request.get_host()))
       url = '/'.join((base, entry.title))
       return HttpResponseRedirect(url)
     
     else:
-      self.response_class = HttpResponseBadRequest
+      self.response_class = BadRequestTemplateResponse
     
     self.extra_context = {
       'page': {
