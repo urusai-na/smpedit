@@ -1,7 +1,7 @@
 {% extends 'base-page.html' %}
 
 {% block content %}
-<form action="/{{page.title}}/" method="post">
+<form action="{{form.url}}" method="post">
     {% csrf_token %}
     {{page.form.as_p}}
     <input type="submit" value="Save"/>

@@ -6,7 +6,14 @@ from editapp.models import Entry
 from django.template import Template, RequestContext
 from django.template.response import TemplateResponse
 from django.views.generic import ListView
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
+model = ContentType.objects.get_for_id(7)
+print('model name:', model.model_class().get_full_name())
+print('label:', Entry._meta.label)
+print('app_label:', Entry._meta.app_label)
+print('verbose_name:', Entry._meta.verbose_name)
 
 class ConflictTemplateResponse(TemplateResponse):
   def __init__(self, *args, **kwargs):
@@ -28,10 +35,19 @@ class EditForm(ModelForm):
     return self.cleaned_data
 
 class EditView(TemplateView):
+  
+  @staticmethod
+  def get_url_name():
+    return Entry.get_full_name()
+  
   def get(self, request, *args, **kwargs):
     action = 'view'
+    
     if 'action' in request.GET:
       action = request.GET['action']
+
+    base = '://'.join((request.scheme, request.get_host()))
+    url = base + reverse(self.get_url_name(), kwargs={'title': kwargs['title']})
     
     if action == 'create':
       if Entry.objects.filter(title__exact=kwargs['title']).exists():
@@ -45,6 +61,7 @@ class EditView(TemplateView):
         },
         'form': {
           'action': 'create',
+          'url': url,
         }
       }
     elif action == 'edit':
@@ -61,6 +78,7 @@ class EditView(TemplateView):
         },
         'form': {
           'action': 'update',
+          'url': url,
         }
       }
     else:
@@ -103,7 +121,7 @@ class EditView(TemplateView):
       entry.text = form.cleaned_data['text']
       entry.save()
       base = '://'.join((request.scheme, request.get_host()))
-      url = '/'.join((base, entry.title))
+      url = base + reverse(self.get_url_name(), kwargs={'title': entry.title})
       return HttpResponseRedirect(url)
     
     else:
@@ -121,21 +139,34 @@ class EditView(TemplateView):
     
     return super().get(request, *args, **kwargs)
 
-class EntriesListView(ListView):
-  model = Entry
-  queryset = Entry.objects.all()
+class EntriesListView(TemplateView):
   template_name = 'entries-list.html'
-  extra_context = {
-    'page': {
-      'title': 'Existing entries list'
+  
+  def get(self, request, *args, **kwargs):
+    queryset = Entry.objects.all()
+    
+    entires_list = []
+    base  = '://'.join((request.scheme, request.get_host()))
+    for entry in queryset:
+      entires_list.append({
+        'title': entry.title,
+        'url': base + reverse(EditView.get_url_name(), kwargs={'title': entry.title})})
+    self.extra_context = {
+      'page': {
+        'title': 'Existing entries list',
+        'entires_list': entires_list,
+      }
     }
-  }
-
-
+    return super().get(request, *args, **kwargs)
+  
+  
 class CreateEntryView(TemplateView):
   def get(self, request, *args, **kwargs):
     form = EditForm()
     self.template_name = "edit-page.html"
+    base = '://'.join((request.scheme, request.get_host()))
+    url = base + reverse(EditView.get_url_name(), kwargs={'title': kwargs['title']})
+
     self.extra_context = {
       'page': {
         'title': 'Create entry',
@@ -143,6 +174,7 @@ class CreateEntryView(TemplateView):
       },
       'form': {
         'action': 'create',
+        'url': url,
       }
     }
     return super().get(request, *args, **kwargs)

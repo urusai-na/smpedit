@@ -19,6 +19,6 @@ from editapp.views import EditView, EntryDispatcher
 
 urlpatterns = [
     path('', EntryDispatcher.as_view()),
-    path('<str:title>/', EditView.as_view()),
+    path('entry/<str:title>/', EditView.as_view(), name=EditView.get_url_name()),
     path('admin/', admin.site.urls),
 ]

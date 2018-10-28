@@ -8,3 +8,7 @@ class Entry(models.Model):
   text = models.TextField(
     null=True
   )
+  
+  @classmethod
+  def get_full_name(cls):
+    return '.'.join((__name__, cls.__name__))
